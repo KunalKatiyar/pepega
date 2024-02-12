@@ -1,3 +1,5 @@
+mod lexer;
+
 use std::env::args;
 use std::fs;
 use std::process;
@@ -10,17 +12,22 @@ fn run_prompt() {
     }
 }
 
-fn error(line: i32, message: String) {
+pub fn error(line: i32, message: String) {
     report(line, "".to_string(), message);
 }
 
-fn report(line: i32, where_error: String, message: String) {
+pub fn report(line: i32, where_error: String, message: String) {
     eprintln!("[line {}] Error {}: {}", line, where_error, message);
+    panic!("Error");
 }
 
 fn run(contents: String) -> Result<(), String>{
-    println!("Running: {}", contents);
-    return Ok(());
+    let mut lexer = lexer::lexer::Lexer::new(contents);
+    lexer.scan_tokens();
+    for token in lexer.tokens {
+        println!("{:?}", token);
+    }
+    Ok(())
 }
 
 fn run_file(path: String) -> Result<(),String> {
