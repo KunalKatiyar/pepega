@@ -1,8 +1,11 @@
 mod lexer;
+mod parser;
 
 use std::env::args;
 use std::fs;
 use std::process;
+use crate::lexer::token::Token;
+use crate::parser::parser::Parser;
 
 fn run_prompt() {
     loop {
@@ -16,6 +19,14 @@ pub fn error(line: i32, message: String) {
     report(line, "".to_string(), message);
 }
 
+pub fn error_token(token: Token, message: &str) {
+    if token.kind == lexer::token::TokenType::EOF {
+        report(token.line as i32, " at end".to_string(), message.to_string());
+    } else {
+        report(token.line as i32, format!(" at '{}'", token.lexeme), message.to_string());
+    }
+}
+
 pub fn report(line: i32, where_error: String, message: String) {
     eprintln!("[line {}] Error {}: {}", line, where_error, message);
     panic!("Error");
@@ -24,9 +35,9 @@ pub fn report(line: i32, where_error: String, message: String) {
 fn run(contents: String) -> Result<(), String>{
     let mut lexer = lexer::lexer::Lexer::new(contents);
     lexer.scan_tokens();
-    for token in lexer.tokens {
-        println!("{:?}", token);
-    }
+    let mut parser = Parser::new(lexer.tokens);
+    let expr = parser.parse();
+    println!("{}", expr.to_string());
     Ok(())
 }
 
