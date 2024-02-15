@@ -142,10 +142,10 @@ impl Parser {
         }
         if self.match_check(vec![TokenType::LEFT_PAREN]) {
             let expr = self.expression();
-            self.consume(TokenType::RIGHT_PAREN, "Expected ')' after expression.");
+            self.consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
             return Expr::new_grouping(expr);
         }
-        let _error_token = self.error(self.peek(), "Expected expression.");
+        let _error_token = self.error(self.peek(), "Expect expression.");
         Expr::new_literal(LiteralValue::NullVal)
     }
 
