@@ -21,6 +21,17 @@ impl LiteralValue {
         }
     }
 
+    pub fn is_falsy(&self) -> bool {
+        match self {
+            LiteralValue::NullVal => true,
+            LiteralValue::BooleanVal(b) => !b,
+            LiteralValue::NumberVal(n) => *n == 0,
+            LiteralValue::FloatVal(f) => *f == 0.0,
+            LiteralValue::StringVal(s) => s.is_empty(),
+            _ => false
+        }
+    }
+
 }
 
 #[derive(Debug)]
