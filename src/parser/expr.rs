@@ -54,4 +54,56 @@ impl Expr {
             Expr::Unary { operator, right } => format!("({} {})", operator.lexeme, right.to_string())
         }
     }
+
+    pub fn evaluate(&self) -> Result<LiteralValue, String> {
+        match self {
+            Expr::Binary { left, operator, right } => {
+                let left = left.evaluate()?;
+                let right = right.evaluate()?;
+                match operator.lexeme.as_str() {
+                    "+" => {
+                        match (left, right) {
+                            (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::NumberVal(l + r)),
+                            (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::FloatVal(l + r)),
+                            (LiteralValue::StringVal(l), LiteralValue::StringVal(r)) => Ok(LiteralValue::StringVal(format!("{}{}", l, r))),
+                            _ => Err("Operands must be two numbers or two strings.".to_string())
+                        }
+                    },
+                    "-" => {
+                        match (left, right) {
+                            (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::NumberVal(l - r)),
+                            (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::FloatVal(l - r)),
+                            _ => Err("Operands must be two numbers.".to_string())
+                        }
+                    },
+                    "*" => {
+                        match (left, right) {
+                            (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::NumberVal(l * r)),
+                            (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::FloatVal(l * r)),
+                            _ => Err("Operands must be two numbers.".to_string())
+                        }
+                    },
+                    "/" => {
+                        match (left, right) {
+                            (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::NumberVal(l / r)),
+                            (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::FloatVal(l / r)),
+                            _ => Err("Operands must be two numbers.".to_string())
+                        }
+                    },
+                    _ => Err("Invalid operator.".to_string())
+                }
+            },
+            Expr::Grouping { expression } => expression.evaluate(),
+            Expr::Literal { value } => Ok(value.clone()),
+            Expr::Unary { operator, right } => {
+                let right = right.evaluate()?;
+                match (right, operator.lexeme.as_str()) {
+                    (LiteralValue::NumberVal(r), "-") => Ok(LiteralValue::NumberVal(-r)),
+                    (LiteralValue::FloatVal(r), "-") => Ok(LiteralValue::FloatVal(-r)),
+                    (any, "!") => any.is_falsy(),
+                    _ => Err("Invalid operand.".to_string())
+                }
+            }
+        }
+    }
 }
