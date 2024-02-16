@@ -70,8 +70,7 @@ impl LiteralValue {
                     LiteralValue::IdentifierVal(o) => i == o,
                     _ => false
                 }
-            },
-            _ => false
+            }
         }
     }
 }

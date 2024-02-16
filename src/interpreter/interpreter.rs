@@ -1,20 +1,43 @@
+use crate::interpreter::environment::Environment;
 use crate::lexer::token::LiteralValue;
 use crate::parser::expr::Expr;
-pub struct Interpreter {
+use crate::parser::stmt::Stmt;
 
+pub struct Interpreter {
+    environment: Environment
 }
 
 impl Interpreter {
     pub fn new() -> Interpreter {
         Interpreter {
-
+            environment: Environment::new()
         }
     }
 
-    pub fn interpret(&mut self, expr: Expr) {
-        match self.evaluate(expr) {
-            Ok(v) => println!("{}", v.to_string()),
-            Err(e) => panic!("{}", e)
+    pub fn interpret_stmt(&mut self, stmt: Vec<Stmt>) {
+        for s in stmt {
+            self.execute(s);
+        }
+    }
+
+    pub fn execute(&mut self, stmt: Stmt) {
+        match stmt {
+            Stmt::Expression { expression } => {
+                match self.evaluate_expr(expression) {
+                    Ok(_) => (),
+                    Err(e) => panic!("{}", e)
+                }
+            },
+            Stmt::Print { expression } => {
+                match self.evaluate_expr(expression) {
+                    Ok(v) => println!("{}", v.to_string()),
+                    Err(e) => panic!("{}", e)
+                }
+            },
+            Stmt::Var { name, initializer } => {
+                let value = self.evaluate_expr(initializer).unwrap();
+                self.environment.define(name.lexeme, value);
+            }
         }
     }
 
@@ -26,11 +49,16 @@ impl Interpreter {
         }
     }
 
-    pub fn evaluate(&mut self, expr: Expr) -> Result<LiteralValue, String> {
+    pub fn evaluate_expr(&mut self, expr: Expr) -> Result<LiteralValue, String> {
         match expr {
+            Expr::Assign { name, value } => {
+                let value = self.evaluate_expr(*value)?;
+                self.environment.assign(&name, value.clone())?;
+                Ok(value)
+            },
             Expr::Binary { left, operator, right } => {
-                let left = self.evaluate(*left)?;
-                let right = self.evaluate(*right)?;
+                let left = self.evaluate_expr(*left)?;
+                let right = self.evaluate_expr(*right)?;
                 match operator.lexeme.as_str() {
                     ">" => {
                         let check_op = self.check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
@@ -134,17 +162,24 @@ impl Interpreter {
                     _ => Err("Invalid operator.".to_string())
                 }
             },
-            Expr::Grouping { expression } => self.evaluate(*expression),
+            Expr::Grouping { expression } => self.evaluate_expr(*expression),
             Expr::Literal { value } => Ok(value.clone()),
             Expr::Unary { operator, right } => {
-                let right = self.evaluate(*right)?;
+                let right = self.evaluate_expr(*right)?;
                 match (right, operator.lexeme.as_str()) {
                     (LiteralValue::NumberVal(r), "-") => Ok(LiteralValue::NumberVal(-r)),
                     (LiteralValue::FloatVal(r), "-") => Ok(LiteralValue::FloatVal(-r)),
                     (any, "!") => Ok(LiteralValue::BooleanVal(!any.is_truthy())),
                     _ => Err("Invalid operand.".to_string())
                 }
-            }
+            },
+            Expr::Variable { name } => {
+                match self.environment.get(&name) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e)
+                }
+            },
+
         }
     }
 }
