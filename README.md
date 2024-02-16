@@ -25,6 +25,12 @@ To get started with Pepega, follow these steps:
 3. Build the project: `cargo build`
 4. Run the interpreter: `cargo run`
 
+## Current Progress
+
+1. Finished Lexer
+2. Finished Parser
+3. ->>> Working on Interpreter
+
 ## Usage
 
 To use Pepega, simply run the interpreter and start writing code using Twitch emotes as part of the syntax.
