@@ -1,4 +1,3 @@
-kappa 1>0
-    chatting("ok")
-aware
-    chatting("oops")
+lulw a = 3;
+lulw b = 20+3;
+chatting (a*b);

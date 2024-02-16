@@ -1,6 +1,8 @@
 use crate::{error_token};
 use crate::lexer::token::{LiteralValue, Token, TokenType};
 use crate::parser::expr::Expr;
+use crate::parser::stmt::Stmt;
+use crate::parser::stmt::Stmt::Print;
 
 pub struct ParseError {
     pub message: String,
@@ -31,11 +33,51 @@ impl Parser {
         }
     }
 
-    pub(crate) fn parse(&mut self) -> Expr {
+    pub(crate) fn parse(&mut self) -> Vec<Stmt> {
+        let mut statements: Vec<Stmt> = Vec::new();
+        while !self.is_at_end() {
+            statements.push(self.declaration());
+        }
         if self.parse_errors.len() > 0 {
             panic!("Cannot parse with errors.");
         }
-        self.expression()
+        statements
+    }
+
+    fn declaration(&mut self) -> Stmt {
+        if self.match_check(vec![TokenType::VAR]) {
+            return self.var_declaration();
+        }
+        self.statement()
+    }
+
+    fn statement(&mut self) -> Stmt {
+        if self.match_check(vec![TokenType::PRINT]) {
+            return self.print_statement();
+        }
+        self.expression_statement()
+    }
+
+    fn var_declaration(&mut self) -> Stmt {
+        let name = self.consume(TokenType::IDENTIFIER, "Expect variable name.");
+        let mut initializer = Expr::new_literal(LiteralValue::NullVal);
+        if self.match_check(vec![TokenType::EQUAL]) {
+            initializer = self.expression();
+        }
+        self.consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+        Stmt::Var { name, initializer }
+    }
+
+    fn print_statement(&mut self) -> Stmt {
+        let value = self.expression();
+        self.consume(TokenType::SEMICOLON, "Expect ';' after value.");
+        Print { expression: value }
+    }
+
+    fn expression_statement(&mut self) -> Stmt {
+        let expr = self.expression();
+        self.consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+        Stmt::Expression { expression: expr }
     }
 
     fn match_check(&mut self, types: Vec<TokenType>) -> bool {
@@ -75,7 +117,20 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Expr{
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Expr {
+        let expr = self.equality();
+        if self.match_check(vec![TokenType::EQUAL]) {
+            let equals = self.previous();
+            let value = self.assignment();
+            if let Expr::Variable { name } = expr {
+                return Expr::new_assign(name, value);
+            }
+            self.error(equals, "Invalid assignment target.");
+        }
+        expr
     }
 
     fn equality(&mut self) -> Expr {
@@ -139,6 +194,9 @@ impl Parser {
         }
         if self.match_check(vec![TokenType::NUMBER, TokenType::STRING]) {
             return Expr::new_literal(self.previous().literal.unwrap());
+        }
+        if self.match_check(vec![TokenType::IDENTIFIER]) {
+            return Expr::new_variable(self.previous());
         }
         if self.match_check(vec![TokenType::LEFT_PAREN]) {
             let expr = self.expression();

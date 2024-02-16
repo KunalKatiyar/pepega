@@ -40,7 +40,7 @@ fn run(contents: String) -> Result<(), String>{
     let mut parser = Parser::new(lexer.tokens);
     let expr = parser.parse();
     let mut interpreter = Interpreter::new();
-    interpreter.interpret(expr);
+    interpreter.interpret_stmt(expr);
     Ok(())
 }
 

@@ -8,19 +8,19 @@ pub fn get_keywords() -> HashMap<String, TokenType> {
         ("and".to_string(), TokenType::AND),
         ("class".to_string(), TokenType::CLASS),
         ("aware".to_string(), TokenType::ELSE),
-        ("false".to_string(), TokenType::FALSE),
+        ("kappa".to_string(), TokenType::FALSE),
         ("forsen".to_string(), TokenType::FOR),
-        ("fun".to_string(), TokenType::FUN),
-        ("kappa".to_string(), TokenType::IF),
+        ("pog".to_string(), TokenType::FUN),
+        ("clueless".to_string(), TokenType::IF),
         ("nil".to_string(), TokenType::NIL),
         ("or".to_string(), TokenType::OR),
         ("chatting".to_string(), TokenType::PRINT),
-        ("return".to_string(), TokenType::RETURN),
+        ("xdd".to_string(), TokenType::RETURN),
         ("super".to_string(), TokenType::SUPER),
         ("this".to_string(), TokenType::THIS),
-        ("true".to_string(), TokenType::TRUE),
-        ("var".to_string(), TokenType::VAR),
-        ("while".to_string(), TokenType::WHILE)
+        ("surely".to_string(), TokenType::TRUE),
+        ("lulw".to_string(), TokenType::VAR),
+        ("residentsleeper".to_string(), TokenType::WHILE)
     ].iter().cloned().collect()
 }
 
