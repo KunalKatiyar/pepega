@@ -22,6 +22,14 @@ impl Interpreter {
 
     pub fn execute(&mut self, stmt: Stmt) {
         match stmt {
+            Stmt::Block { statements } => {
+                let previous = self.environment.clone();
+                self.environment = Environment::new_with_enclosing(previous.clone());
+                for s in statements {
+                    self.execute(s);
+                }
+                self.environment = previous;
+            },
             Stmt::Expression { expression } => {
                 match self.evaluate_expr(expression) {
                     Ok(_) => (),
