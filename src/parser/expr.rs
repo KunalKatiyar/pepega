@@ -1,4 +1,4 @@
-use crate::lexer::token::{LiteralValue, Token};
+use crate::lexer::token::{LiteralValue, Token, TokenType};
 
 pub enum Expr {
     Binary {
@@ -46,6 +46,21 @@ impl Expr {
         }
     }
 
+    pub fn interpret(&self) {
+        match self.evaluate() {
+            Ok(v) => println!("{}", v.to_string()),
+            Err(e) => panic!("{}", e)
+        }
+    }
+
+    pub fn check_operands(left: LiteralValue, right: LiteralValue, message: &str) -> Result<(), String> {
+        match (left, right) {
+            (LiteralValue::NumberVal(_), LiteralValue::NumberVal(_)) => Ok(()),
+            (LiteralValue::FloatVal(_), LiteralValue::FloatVal(_)) => Ok(()),
+            _ => Err(message.to_string())
+        }
+    }
+
     pub fn to_string(&self) -> String {
         match self {
             Expr::Binary { left, operator, right } => format!("({} {} {})", operator.lexeme, left.to_string(), right.to_string()),
@@ -61,7 +76,62 @@ impl Expr {
                 let left = left.evaluate()?;
                 let right = right.evaluate()?;
                 match operator.lexeme.as_str() {
+                    ">" => {
+                        let check_op = Expr::check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
+                        match check_op {
+                            Ok(_) => (),
+                            Err(e) => panic!("{}", e)
+                        }
+                        match (left, right) {
+                            (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::BooleanVal(l > r)),
+                            (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::BooleanVal(l > r)),
+                            _ => Err("Operands must be two numbers.".to_string())
+                        }
+                    },
+                    "<" => {
+                        let check_op = Expr::check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
+                        match check_op {
+                            Ok(_) => (),
+                            Err(e) => panic!("{}", e)
+                        }
+                        match (left, right) {
+                            (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::BooleanVal(l < r)),
+                            (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::BooleanVal(l < r)),
+                            _ => Err("Operands must be two numbers.".to_string())
+                        }
+                    },
+                    ">=" => {
+                        let check_op = Expr::check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
+                        match check_op {
+                            Ok(_) => (),
+                            Err(e) => panic!("{}", e)
+                        }
+                        match (left, right) {
+                            (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::BooleanVal(l >= r)),
+                            (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::BooleanVal(l >= r)),
+                            _ => Err("Operands must be two numbers.".to_string())
+                        }
+                    },
+                    "<=" => {
+                        let check_op = Expr::check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
+                        match check_op {
+                            Ok(_) => (),
+                            Err(e) => panic!("{}", e)
+                        }
+                        match (left, right) {
+                            (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::BooleanVal(l <= r)),
+                            (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::BooleanVal(l <= r)),
+                            _ => Err("Operands must be two numbers.".to_string())
+                        }
+                    },
+                    "==" => Ok(LiteralValue::BooleanVal(LiteralValue::is_equal(left.clone(), right.clone()))),
+                    "!=" => Ok(LiteralValue::BooleanVal(!LiteralValue::is_equal(left.clone(), right.clone()))),
                     "+" => {
+                        let check_op = Expr::check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
+                        match check_op {
+                            Ok(_) => (),
+                            Err(e) => panic!("{}", e)
+                        }
                         match (left, right) {
                             (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::NumberVal(l + r)),
                             (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::FloatVal(l + r)),
@@ -70,6 +140,11 @@ impl Expr {
                         }
                     },
                     "-" => {
+                        let check_op = Expr::check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
+                        match check_op {
+                            Ok(_) => (),
+                            Err(e) => panic!("{}", e)
+                        }
                         match (left, right) {
                             (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::NumberVal(l - r)),
                             (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::FloatVal(l - r)),
@@ -77,6 +152,11 @@ impl Expr {
                         }
                     },
                     "*" => {
+                        let check_op = Expr::check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
+                        match check_op {
+                            Ok(_) => (),
+                            Err(e) => panic!("{}", e)
+                        }
                         match (left, right) {
                             (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::NumberVal(l * r)),
                             (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::FloatVal(l * r)),
@@ -84,6 +164,11 @@ impl Expr {
                         }
                     },
                     "/" => {
+                        let check_op = Expr::check_operands(left.clone(), right.clone(), "Operands must be two numbers.");
+                        match check_op {
+                            Ok(_) => (),
+                            Err(e) => panic!("{}", e)
+                        }
                         match (left, right) {
                             (LiteralValue::NumberVal(l), LiteralValue::NumberVal(r)) => Ok(LiteralValue::NumberVal(l / r)),
                             (LiteralValue::FloatVal(l), LiteralValue::FloatVal(r)) => Ok(LiteralValue::FloatVal(l / r)),
@@ -100,7 +185,7 @@ impl Expr {
                 match (right, operator.lexeme.as_str()) {
                     (LiteralValue::NumberVal(r), "-") => Ok(LiteralValue::NumberVal(-r)),
                     (LiteralValue::FloatVal(r), "-") => Ok(LiteralValue::FloatVal(-r)),
-                    (any, "!") => any.is_falsy(),
+                    (any, "!") => Ok(LiteralValue::BooleanVal(!any.is_truthy())),
                     _ => Err("Invalid operand.".to_string())
                 }
             }

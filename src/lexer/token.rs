@@ -21,19 +21,60 @@ impl LiteralValue {
         }
     }
 
-    pub fn is_falsy(&self) -> bool {
+    pub fn is_truthy(&self) -> bool {
         match self {
-            LiteralValue::NullVal => true,
-            LiteralValue::BooleanVal(b) => !b,
-            LiteralValue::NumberVal(n) => *n == 0,
-            LiteralValue::FloatVal(f) => *f == 0.0,
-            LiteralValue::StringVal(s) => s.is_empty(),
+            LiteralValue::NullVal => false,
+            LiteralValue::BooleanVal(b) => *b,
+            LiteralValue::FloatVal(f) => *f != 0.0,
+            LiteralValue::NumberVal(n) => *n != 0,
+            LiteralValue::StringVal(s) => s.len() > 0,
+            LiteralValue::IdentifierVal(_) => true,
             _ => false
         }
     }
 
+    pub fn is_equal(self_val: LiteralValue, other_val: LiteralValue) -> bool {
+        match self_val {
+            LiteralValue::StringVal(s) => {
+                match other_val {
+                    LiteralValue::StringVal(o) => s == o,
+                    _ => false
+                }
+            },
+            LiteralValue::NumberVal(n) => {
+                match other_val {
+                    LiteralValue::NumberVal(o) => n == o,
+                    _ => false
+                }
+            },
+            LiteralValue::FloatVal(f) => {
+                match other_val {
+                    LiteralValue::FloatVal(o) => f == o,
+                    _ => false
+                }
+            },
+            LiteralValue::NullVal => {
+                match other_val {
+                    LiteralValue::NullVal => true,
+                    _ => false
+                }
+            },
+            LiteralValue::BooleanVal(b) => {
+                match other_val {
+                    LiteralValue::BooleanVal(o) => b == o,
+                    _ => false
+                }
+            },
+            LiteralValue::IdentifierVal(i) => {
+                match other_val {
+                    LiteralValue::IdentifierVal(o) => i == o,
+                    _ => false
+                }
+            },
+            _ => false
+        }
+    }
 }
-
 #[derive(Debug)]
 #[derive(Clone)]
 pub struct Token {

@@ -5,6 +5,7 @@ use std::env::args;
 use std::fs;
 use std::process;
 use crate::lexer::token::Token;
+use crate::parser::expr::Expr;
 use crate::parser::parser::Parser;
 
 fn run_prompt() {
@@ -37,7 +38,7 @@ fn run(contents: String) -> Result<(), String>{
     lexer.scan_tokens();
     let mut parser = Parser::new(lexer.tokens);
     let expr = parser.parse();
-    println!("{}", expr.to_string());
+    expr.interpret();
     Ok(())
 }
 
