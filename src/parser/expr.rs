@@ -1,5 +1,7 @@
 use crate::lexer::token::{LiteralValue, Token};
 
+#[derive(Clone)]
+#[derive(Debug)]
 pub enum Expr {
     Assign {
         name: Token,
@@ -15,6 +17,11 @@ pub enum Expr {
     },
     Literal {
         value: LiteralValue
+    },
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>
     },
     Unary {
         operator: Token,
@@ -52,6 +59,14 @@ impl Expr {
         }
     }
 
+    pub fn new_logical(left: Expr, operator: Token, right: Expr) -> Expr {
+        Expr::Logical {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right)
+        }
+    }
+
     pub fn new_unary(operator: Token, right: Expr) -> Expr {
         Expr::Unary {
             operator,
@@ -62,16 +77,6 @@ impl Expr {
     pub fn new_variable(name: Token) -> Expr {
         Expr::Variable {
             name
-        }
-    }
-    pub fn to_string(&self) -> String {
-        match self {
-            Expr::Assign { name, value } => format!("(= {} {})", name.lexeme, value.to_string()),
-            Expr::Binary { left, operator, right } => format!("({} {} {})", operator.lexeme, left.to_string(), right.to_string()),
-            Expr::Grouping { expression } => format!("(group {})", expression.to_string()),
-            Expr::Literal { value } => format!("{}", value.to_string()),
-            Expr::Unary { operator, right } => format!("({} {})", operator.lexeme, right.to_string()),
-            Expr::Variable { name } => format!("{}", name.lexeme)
         }
     }
 }

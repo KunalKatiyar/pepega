@@ -3,6 +3,7 @@ use crate::lexer::token::LiteralValue;
 use crate::parser::expr::Expr;
 use crate::parser::stmt::Stmt;
 
+#[derive(Clone)]
 pub struct Interpreter {
     environment: Environment
 }
@@ -28,11 +29,40 @@ impl Interpreter {
                 for s in statements {
                     self.execute(s);
                 }
-                self.environment = previous;
+                self.environment = *(self.environment.enclosing.clone().unwrap());
             },
             Stmt::Expression { expression } => {
                 match self.evaluate_expr(expression) {
                     Ok(_) => (),
+                    Err(e) => panic!("{}", e)
+                }
+            },
+            Stmt::While { condition, body } => {
+                loop {
+                    match self.evaluate_expr(condition.clone()) {
+                        Ok(v) => {
+                            if v.is_truthy() {
+                                self.execute(*(body.clone()));
+                            } else {
+                                break;
+                            }
+                        },
+                        Err(e) => panic!("{}", e)
+                    }
+                }
+            },
+            Stmt::If { condition, then_branch, else_branch } => {
+                match self.evaluate_expr(condition) {
+                    Ok(v) => {
+                        if v.is_truthy() {
+                            self.execute(*then_branch);
+                        } else {
+                            match else_branch {
+                                Some(b) => self.execute(*b),
+                                None => ()
+                            }
+                        }
+                    },
                     Err(e) => panic!("{}", e)
                 }
             },
@@ -171,6 +201,26 @@ impl Interpreter {
                 }
             },
             Expr::Grouping { expression } => self.evaluate_expr(*expression),
+            Expr::Logical { left, operator, right } => {
+                let left = self.evaluate_expr(*left)?;
+                match operator.lexeme.as_str() {
+                    "or" => {
+                        if left.is_truthy() {
+                            Ok(left)
+                        } else {
+                            self.evaluate_expr(*right)
+                        }
+                    },
+                    "and" => {
+                        if !left.is_truthy() {
+                            Ok(left)
+                        } else {
+                            self.evaluate_expr(*right)
+                        }
+                    },
+                    _ => Err("Invalid operator.".to_string())
+                }
+            },
             Expr::Literal { value } => Ok(value.clone()),
             Expr::Unary { operator, right } => {
                 let right = self.evaluate_expr(*right)?;

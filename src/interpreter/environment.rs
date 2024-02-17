@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use crate::lexer::token::{LiteralValue, Token};
 
+#[derive(Clone)]
 pub struct Environment {
-    enclosing: Option<Box<Environment>>,
-    values: HashMap<String, LiteralValue>
+    pub enclosing: Option<Box<Environment>>,
+    pub values: HashMap<String, LiteralValue>
 }
 
 impl Environment {
@@ -16,15 +17,6 @@ impl Environment {
 
     pub fn define(&mut self, name: String, value: LiteralValue) {
         self.values.insert(name, value);
-    }
-
-    pub fn clone(&self) -> Environment {
-        let enclosing = self.enclosing.as_ref().map(|e| Box::new((*e).clone()));
-
-        Environment {
-            enclosing,
-            values: self.values.clone(),
-        }
     }
 
     pub fn assign(&mut self, name: &Token, value: LiteralValue) -> Result<(), String> {
