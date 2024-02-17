@@ -28,8 +28,7 @@ impl LiteralValue {
             LiteralValue::FloatVal(f) => *f != 0.0,
             LiteralValue::NumberVal(n) => *n != 0,
             LiteralValue::StringVal(s) => s.len() > 0,
-            LiteralValue::IdentifierVal(_) => true,
-            _ => false
+            LiteralValue::IdentifierVal(_) => true
         }
     }
 

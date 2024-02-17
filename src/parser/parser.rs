@@ -52,8 +52,17 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Stmt {
+        if self.match_check(vec![TokenType::IF]) {
+            return self.if_statement();
+        }
         if self.match_check(vec![TokenType::PRINT]) {
             return self.print_statement();
+        }
+        if self.match_check(vec![TokenType::WHILE]) {
+            return self.while_statement();
+        }
+        if self.match_check(vec![TokenType::FOR]) {
+            return self.for_statement();
         }
         if self.match_check(vec![TokenType::LEFT_BRACE]) {
             return Stmt::Block { statements: self.block() };
@@ -68,6 +77,58 @@ impl Parser {
         }
         self.consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
         statements
+    }
+
+    fn for_statement(&mut self) -> Stmt {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+        let initializer = if self.match_check(vec![TokenType::SEMICOLON]) {
+            None
+        } else if self.match_check(vec![TokenType::VAR]) {
+            Some(self.var_declaration())
+        } else {
+            Some(self.expression_statement())
+        };
+        let condition = if !self.check(TokenType::SEMICOLON) {
+            self.expression()
+        } else {
+            Expr::new_literal(LiteralValue::BooleanVal(true))
+        };
+        self.consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+        let increment = if !self.check(TokenType::RIGHT_PAREN) {
+            Some(self.expression())
+        } else {
+            None
+        };
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+        let mut body = Box::new(self.statement());
+        if let Some(increment) = increment {
+            body = Box::new(Stmt::Block { statements: vec![*body, Stmt::Expression { expression: increment }] });
+        }
+        body = Box::new(Stmt::While { condition, body });
+        if let Some(initializer) = initializer {
+            body = Box::new(Stmt::Block { statements: vec![initializer, *body] });
+        }
+        *body
+    }
+    fn while_statement(&mut self) -> Stmt {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
+        let condition = self.expression();
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.");
+        let body = Box::new(self.statement());
+        Stmt::While { condition, body }
+    }
+
+    fn if_statement(&mut self) -> Stmt {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+        let condition = self.expression();
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
+        let then_branch = Box::new(self.statement());
+        let else_branch = if self.match_check(vec![TokenType::ELSE]) {
+            Some(Box::new(self.statement()))
+        } else {
+            None
+        };
+        Stmt::If { condition, then_branch, else_branch }
     }
 
     fn var_declaration(&mut self) -> Stmt {
@@ -133,7 +194,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Expr {
-        let expr = self.equality();
+        let expr = self.or();
         if self.match_check(vec![TokenType::EQUAL]) {
             let equals = self.previous();
             let value = self.assignment();
@@ -141,6 +202,26 @@ impl Parser {
                 return Expr::new_assign(name, value);
             }
             self.error(equals, "Invalid assignment target.");
+        }
+        expr
+    }
+
+    fn or(&mut self) -> Expr {
+        let mut expr = self.and();
+        while self.match_check(vec![TokenType::OR]) {
+            let operator = self.previous();
+            let right = self.and();
+            expr = Expr::new_logical(expr, operator, right);
+        }
+        expr
+    }
+
+    fn and(&mut self) -> Expr {
+        let mut expr = self.equality();
+        while self.match_check(vec![TokenType::AND]) {
+            let operator = self.previous();
+            let right = self.equality();
+            expr = Expr::new_logical(expr, operator, right);
         }
         expr
     }
