@@ -26,23 +26,41 @@ impl Interpreter {
         }
     }
 
-    pub fn execute_block (&mut self, statements: Vec<Stmt>) {
-        self.execute(Stmt::Block { statements });
+    pub fn execute_block (&mut self, statements: Vec<Stmt>) -> Result<LiteralValue, String> {
+        self.execute(Stmt::Block { statements })
     }
 
-    pub fn execute(&mut self, stmt: Stmt) {
+    pub fn execute(&mut self, stmt: Stmt) -> Result<LiteralValue, String>{
         match stmt {
             Stmt::Block { statements } => {
                 let previous = self.environment.clone();
                 self.environment = Environment::new_with_enclosing(previous.clone());
                 for s in statements {
-                    self.execute(s);
+                    match s {
+                        Stmt::Return { keyword: _, value: _ } => {
+                            self.environment = *(self.environment.enclosing.clone().unwrap());
+                            return Ok(self.execute(s).expect("Error executing return statement."));
+                        },
+                        _ => { self.execute(s).expect("Error executing statement."); }
+                    }
                 }
                 self.environment = *(self.environment.enclosing.clone().unwrap());
+                Ok(LiteralValue::NullVal)
+            },
+            Stmt::Return { keyword: _, value } => {
+                match value {
+                    Some(v) => {
+                        match self.evaluate_expr(v) {
+                            Ok(v) => Ok(v),
+                            Err(e) => panic!("{}", e)
+                        }
+                    },
+                    None => panic!("")
+                }
             },
             Stmt::Expression { expression } => {
                 match self.evaluate_expr(expression.clone()) {
-                    Ok(_) => (),
+                    Ok(_) => Ok(LiteralValue::NullVal),
                     Err(e) => panic!("{}", e)
                 }
             },
@@ -51,24 +69,25 @@ impl Interpreter {
                     match self.evaluate_expr(condition.clone()) {
                         Ok(v) => {
                             if v.is_truthy() {
-                                self.execute(*(body.clone()));
+                                self.execute(*(body.clone())).expect("Error executing body.");
                             } else {
                                 break;
                             }
                         },
-                        Err(e) => panic!("{}", e)
+                        Err(e) => Err(e).expect("Error evaluating condition.")
                     }
                 }
+                Ok(LiteralValue::NullVal)
             },
             Stmt::If { condition, then_branch, else_branch } => {
                 match self.evaluate_expr(condition) {
                     Ok(v) => {
                         if v.is_truthy() {
-                            self.execute(*then_branch);
+                            self.execute(*then_branch)
                         } else {
                             match else_branch {
                                 Some(b) => self.execute(*b),
-                                None => ()
+                                None => Ok(LiteralValue::NullVal)
                             }
                         }
                     },
@@ -76,17 +95,20 @@ impl Interpreter {
                 }
             },
             Stmt::Function { name, params, body } => {
-                self.environment.define(name.lexeme.clone(), FunctionVal(Box::new(Stmt::Function { name, params, body })));
+                self.environment.define(name.lexeme.clone(), FunctionVal(Box::new(Stmt::Function { name, params, body })))
             }
             Stmt::Print { expression } => {
                 match self.evaluate_expr(expression) {
-                    Ok(v) => println!("{}", v.to_string()),
-                    Err(e) => panic!("{}", e)
+                    Ok(v) => {
+                        println!("{}", v.to_string());
+                        Ok(LiteralValue::NullVal)
+                    },
+                    Err(e) => Err(e)
                 }
             },
             Stmt::Var { name, initializer } => {
                 let value = self.evaluate_expr(initializer).unwrap();
-                self.environment.define(name.lexeme, value);
+                self.environment.define(name.lexeme, value)
             }
         }
     }
