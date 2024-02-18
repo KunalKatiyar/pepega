@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use crate::lexer::token::{LiteralValue, Token};
 
 #[derive(Clone)]
@@ -11,6 +12,11 @@ pub enum Expr {
         left: Box<Expr>,
         operator: Token,
         right: Box<Expr>
+    },
+    Call {
+        callee: Box<Expr>,
+        paren: Token,
+        arguments: Vec<Expr>
     },
     Grouping {
         expression: Box<Expr>
@@ -32,6 +38,37 @@ pub enum Expr {
     }
 }
 
+impl Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Expr::Assign { ref name, ref value } => {
+                write!(f, "Assign: {:?}, {:?}", name, value)
+            },
+            Expr::Binary { ref left, ref operator, ref right } => {
+                write!(f, "Binary: {:?}, {:?}, {:?}", left, operator, right)
+            },
+            Expr::Call { ref callee, ref paren, ref arguments } => {
+                write!(f, "Call: {:?}, {:?}, {:?}", callee, paren, arguments)
+            },
+            Expr::Grouping { ref expression } => {
+                write!(f, "Grouping: {:?}", expression)
+            },
+            Expr::Literal { ref value } => {
+                write!(f, "Literal: {:?}", value)
+            },
+            Expr::Logical { ref left, ref operator, ref right } => {
+                write!(f, "Logical: {:?}, {:?}, {:?}", left, operator, right)
+            },
+            Expr::Unary { ref operator, ref right } => {
+                write!(f, "Unary: {:?}, {:?}", operator, right)
+            },
+            Expr::Variable { ref name } => {
+                write!(f, "Variable: {:?}", name)
+            }
+        }
+    }
+}
+
 impl Expr {
     pub fn new_assign(name: Token, value: Expr) -> Expr {
         Expr::Assign {
@@ -44,6 +81,14 @@ impl Expr {
             left: Box::new(left),
             operator,
             right: Box::new(right)
+        }
+    }
+
+    pub fn new_call(callee: Expr, paren: Token, arguments: Vec<Expr>) -> Expr {
+        Expr::Call {
+            callee: Box::new(callee),
+            paren,
+            arguments
         }
     }
 

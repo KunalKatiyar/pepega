@@ -1,0 +1,4 @@
+pog helloworld(word) {
+    chatting ("Hello " + word + "!");
+}
+helloworld("world");
