@@ -1,24 +1,33 @@
+use crate::interpreter::callable::{Callable};
 use crate::interpreter::environment::Environment;
 use crate::lexer::token::LiteralValue;
+use crate::lexer::token::LiteralValue::FunctionVal;
 use crate::parser::expr::Expr;
 use crate::parser::stmt::Stmt;
 
 #[derive(Clone)]
 pub struct Interpreter {
-    environment: Environment
+    pub global: Environment,
+    pub environment: Environment
 }
 
 impl Interpreter {
     pub fn new() -> Interpreter {
-        Interpreter {
+        let new_interpreter = Interpreter {
+            global: Environment::new(),
             environment: Environment::new()
-        }
+        };
+        new_interpreter
     }
 
     pub fn interpret_stmt(&mut self, stmt: Vec<Stmt>) {
         for s in stmt {
             self.execute(s);
         }
+    }
+
+    pub fn execute_block (&mut self, statements: Vec<Stmt>) {
+        self.execute(Stmt::Block { statements });
     }
 
     pub fn execute(&mut self, stmt: Stmt) {
@@ -32,7 +41,7 @@ impl Interpreter {
                 self.environment = *(self.environment.enclosing.clone().unwrap());
             },
             Stmt::Expression { expression } => {
-                match self.evaluate_expr(expression) {
+                match self.evaluate_expr(expression.clone()) {
                     Ok(_) => (),
                     Err(e) => panic!("{}", e)
                 }
@@ -66,6 +75,9 @@ impl Interpreter {
                     Err(e) => panic!("{}", e)
                 }
             },
+            Stmt::Function { name, params, body } => {
+                self.environment.define(name.lexeme.clone(), FunctionVal(Box::new(Stmt::Function { name, params, body })));
+            }
             Stmt::Print { expression } => {
                 match self.evaluate_expr(expression) {
                     Ok(v) => println!("{}", v.to_string()),
@@ -83,6 +95,7 @@ impl Interpreter {
         match (left, right) {
             (LiteralValue::NumberVal(_), LiteralValue::NumberVal(_)) => Ok(()),
             (LiteralValue::FloatVal(_), LiteralValue::FloatVal(_)) => Ok(()),
+            (LiteralValue::StringVal(_), LiteralValue::StringVal(_)) => Ok(()),
             _ => Err(message.to_string())
         }
     }
@@ -198,6 +211,27 @@ impl Interpreter {
                         }
                     },
                     _ => Err("Invalid operator.".to_string())
+                }
+            },
+            Expr::Call { callee, paren: _, arguments } => {
+                let callee = self.evaluate_expr(*callee)?;
+                let mut args = Vec::new();
+                for a in arguments {
+                    args.push(self.evaluate_expr(a)?);
+                }
+                match callee {
+                    LiteralValue::CallableVal(name) => {
+                        Ok(LiteralValue::CallableVal(name).call(self, args)?)
+                    },
+                    LiteralValue::FunctionVal(stmt) => {
+                        match *stmt {
+                            Stmt::Function { name, params: _, body: _} => {
+                                LiteralValue::CallableVal(Box::new(name)).call(self, args)
+                            },
+                            _ => Err("Cannot call non-function.".to_string())
+                        }
+                    },
+                    _ => Err("Can only call functions and classes.".to_string())
                 }
             },
             Expr::Grouping { expression } => self.evaluate_expr(*expression),

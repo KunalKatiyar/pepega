@@ -1,3 +1,6 @@
+use crate::interpreter::callable::{Callable};
+use crate::parser::stmt::Stmt;
+
 #[derive(Debug)]
 #[derive(Clone)]
 pub enum LiteralValue {
@@ -6,7 +9,9 @@ pub enum LiteralValue {
     FloatVal(f64),
     NullVal,
     BooleanVal(bool),
-    IdentifierVal(String)
+    IdentifierVal(String),
+    FunctionVal(Box<Stmt>),
+    CallableVal(Box<Token>)
 }
 
 impl LiteralValue {
@@ -17,7 +22,9 @@ impl LiteralValue {
             LiteralValue::FloatVal(f) => f.to_string(),
             LiteralValue::NullVal => "nil".to_string(),
             LiteralValue::IdentifierVal(i) => i.to_string(),
-            LiteralValue::BooleanVal(b) => b.to_string()
+            LiteralValue::BooleanVal(b) => b.to_string(),
+            LiteralValue::CallableVal(_) => "callable".to_string(),
+            LiteralValue::FunctionVal(_) => "function".to_string()
         }
     }
 
@@ -28,7 +35,9 @@ impl LiteralValue {
             LiteralValue::FloatVal(f) => *f != 0.0,
             LiteralValue::NumberVal(n) => *n != 0,
             LiteralValue::StringVal(s) => s.len() > 0,
-            LiteralValue::IdentifierVal(_) => true
+            LiteralValue::IdentifierVal(_) => true,
+            LiteralValue::CallableVal(_) => true,
+            LiteralValue::FunctionVal(_) => true
         }
     }
 
@@ -69,7 +78,66 @@ impl LiteralValue {
                     LiteralValue::IdentifierVal(o) => i == o,
                     _ => false
                 }
+            },
+            LiteralValue::CallableVal(_) => {
+                match other_val {
+                    LiteralValue::CallableVal(_) => false,
+                    _ => false
+                }
+            },
+            LiteralValue::FunctionVal(_) => {
+                match other_val {
+                    LiteralValue::FunctionVal(_) => false,
+                    _ => false
+                }
             }
+        }
+    }
+}
+
+impl Callable for LiteralValue {
+    fn arity(&self) -> usize {
+        match self {
+            LiteralValue::FunctionVal(stmt) => {
+                let stmt_non_box = *(stmt.clone());
+                match stmt_non_box {
+                    Stmt::Function { params, .. } => params.len(),
+                    _ => 0
+                }
+            },
+            _ => 0
+        }
+    }
+
+    fn call(&self, interpreter: &mut crate::interpreter::interpreter::Interpreter, arguments: Vec<LiteralValue>) -> Result<LiteralValue, String> {
+        match self {
+            LiteralValue::CallableVal(name, ..) => {
+                match interpreter.environment.get(name) {
+                    Ok(v) => {
+                        match v {
+                            LiteralValue::FunctionVal(stmt) => {
+                                match *stmt {
+                                    Stmt::Function { params, body, .. } => {
+                                        let environment_copy = interpreter.environment.clone();
+                                        let mut environment = interpreter.environment.clone();
+                                        for (i, param) in params.iter().enumerate() {
+                                            environment.define(param.lexeme.clone(), arguments[i].clone());
+                                        }
+                                        interpreter.environment = environment;
+                                        interpreter.execute_block(body);
+                                        interpreter.environment = environment_copy;
+                                        Ok(LiteralValue::NullVal)
+                                    },
+                                    _ => Err("Cannot call non-function.".to_string())
+                                }
+                            },
+                            _ => Err("Cannot call non-function.".to_string())
+                        }
+                    },
+                    Err(e) => Err(e)
+                }
+            },
+            _ => Err("Cannot call non-function.".to_string())
         }
     }
 }
