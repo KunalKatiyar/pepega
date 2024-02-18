@@ -15,8 +15,9 @@ impl Environment {
         }
     }
 
-    pub fn define(&mut self, name: String, value: LiteralValue) {
+    pub fn define(&mut self, name: String, value: LiteralValue) -> Result<LiteralValue, String> {
         self.values.insert(name, value);
+        Ok(LiteralValue::NullVal)
     }
 
     pub fn assign(&mut self, name: &Token, value: LiteralValue) -> Result<(), String> {

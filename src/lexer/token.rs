@@ -1,4 +1,6 @@
+use std::iter::Cloned;
 use crate::interpreter::callable::{Callable};
+use crate::interpreter::environment::Environment;
 use crate::parser::stmt::Stmt;
 
 #[derive(Debug)]
@@ -121,12 +123,12 @@ impl Callable for LiteralValue {
                                         let environment_copy = interpreter.environment.clone();
                                         let mut environment = interpreter.environment.clone();
                                         for (i, param) in params.iter().enumerate() {
-                                            environment.define(param.lexeme.clone(), arguments[i].clone());
+                                            environment.define(param.lexeme.clone(), arguments[i].clone()).expect("Error defining function parameter.");
                                         }
                                         interpreter.environment = environment;
-                                        interpreter.execute_block(body);
+                                        let result = interpreter.execute_block(body);
                                         interpreter.environment = environment_copy;
-                                        Ok(LiteralValue::NullVal)
+                                        result
                                     },
                                     _ => Err("Cannot call non-function.".to_string())
                                 }

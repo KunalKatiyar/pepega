@@ -23,6 +23,10 @@ pub enum Stmt {
     Print {
         expression: Expr
     },
+    Return {
+        keyword: Token,
+        value: Option<Expr>
+    },
     While {
         condition: Expr,
         body: Box<Stmt>
@@ -56,6 +60,9 @@ impl Display for Stmt {
             },
             Stmt::Var { ref name, ref initializer } => {
                 write!(f, "Var: {:?}, {:?}", name, initializer)
+            },
+            Stmt::Return { ref keyword, ref value } => {
+                write!(f, "Return: {:?}, {:?}", keyword, value)
             }
         }
     }

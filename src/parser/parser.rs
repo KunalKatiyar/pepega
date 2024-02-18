@@ -61,6 +61,9 @@ impl Parser {
         if self.match_check(vec![TokenType::PRINT]) {
             return self.print_statement();
         }
+        if self.match_check(vec![TokenType::RETURN]) {
+            return self.return_statement();
+        }
         if self.match_check(vec![TokenType::WHILE]) {
             return self.while_statement();
         }
@@ -80,6 +83,17 @@ impl Parser {
         }
         self.consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
         statements
+    }
+
+    fn return_statement(&mut self) -> Stmt {
+        let keyword = self.previous();
+        let value = if !self.check(TokenType::SEMICOLON) {
+            Some(self.expression())
+        } else {
+            None
+        };
+        self.consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+        Stmt::Return { keyword, value }
     }
 
     fn for_statement(&mut self) -> Stmt {

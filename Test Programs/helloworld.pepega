@@ -1,4 +1,4 @@
 pog helloworld(word) {
-    chatting ("Hello " + word + "!");
+    xdd ("Hello " + word + "!");
 }
-helloworld("world");
+chatting (helloworld("world"));
