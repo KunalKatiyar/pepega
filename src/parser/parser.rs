@@ -1,5 +1,6 @@
 use crate::{error_token};
 use crate::lexer::token::{LiteralValue, Token, TokenType};
+use crate::lexer::token::TokenType::IDENTIFIER;
 use crate::parser::expr::Expr;
 use crate::parser::stmt::Stmt;
 use crate::parser::stmt::Stmt::Print;
@@ -45,6 +46,9 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> Stmt {
+        if self.match_check(vec![TokenType::CLASS]) {
+            return self.class_statement();
+        }
         if self.match_check(vec![TokenType::FUN]) {
             return self.function("function");
         }
@@ -83,6 +87,17 @@ impl Parser {
         }
         self.consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
         statements
+    }
+
+    fn class_statement(&mut self) -> Stmt {
+        let name = self.consume(TokenType::IDENTIFIER, "Expect class name.");
+        self.consume(TokenType::LEFT_BRACE, "Expect '{' before class body.");
+        let mut methods: Vec<Stmt> = Vec::new();
+        while !self.check(TokenType::RIGHT_BRACE) && !self.is_at_end() {
+            methods.push(self.function("method"));
+        }
+        self.consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
+        Stmt::Class { name, methods }
     }
 
     fn return_statement(&mut self) -> Stmt {
@@ -238,6 +253,8 @@ impl Parser {
             let value = self.assignment();
             if let Expr::Variable { name } = expr {
                 return Expr::new_assign(name, value);
+            } else if let Expr::Get { object, name } = expr {
+                return Expr::new_set(*object, name, value);
             }
             self.error(equals, "Invalid assignment target.");
         }
@@ -318,6 +335,9 @@ impl Parser {
         loop {
             if self.match_check(vec![TokenType::LEFT_PAREN]) {
                 expr = self.finish_call(expr);
+            } else if self.match_check(vec![TokenType::DOT]) {
+                let mut tok = self.consume(IDENTIFIER, "Expect property name after '.'.");
+                expr = Expr::new_get(expr, tok);
             } else {
                 break;
             }

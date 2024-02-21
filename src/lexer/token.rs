@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::iter::Cloned;
 use crate::interpreter::callable::{Callable};
 use crate::interpreter::environment::Environment;
@@ -13,7 +14,9 @@ pub enum LiteralValue {
     BooleanVal(bool),
     IdentifierVal(String),
     FunctionVal(Box<Stmt>),
-    CallableVal(Box<Token>)
+    CallableVal(Box<Token>),
+    ClassVal(Box<Token>, HashMap<String, LiteralValue>),
+    InstanceVal(Box<Token>, HashMap<String, LiteralValue>)
 }
 
 impl LiteralValue {
@@ -26,7 +29,9 @@ impl LiteralValue {
             LiteralValue::IdentifierVal(i) => i.to_string(),
             LiteralValue::BooleanVal(b) => b.to_string(),
             LiteralValue::CallableVal(_) => "callable".to_string(),
-            LiteralValue::FunctionVal(_) => "function".to_string()
+            LiteralValue::FunctionVal(_) => "function".to_string(),
+            LiteralValue::ClassVal(_, _) => "class".to_string(),
+            LiteralValue::InstanceVal(token, values) => (*(token.lexeme.clone())).to_string()
         }
     }
 
@@ -39,7 +44,9 @@ impl LiteralValue {
             LiteralValue::StringVal(s) => s.len() > 0,
             LiteralValue::IdentifierVal(_) => true,
             LiteralValue::CallableVal(_) => true,
-            LiteralValue::FunctionVal(_) => true
+            LiteralValue::FunctionVal(_) => true,
+            LiteralValue::ClassVal(_, _) => true,
+            LiteralValue::InstanceVal(_, _) => true
         }
     }
 
@@ -92,6 +99,18 @@ impl LiteralValue {
                     LiteralValue::FunctionVal(_) => false,
                     _ => false
                 }
+            },
+            LiteralValue::ClassVal(_, _) => {
+                match other_val {
+                    LiteralValue::ClassVal(_, _) => false,
+                    _ => false
+                }
+            },
+            LiteralValue::InstanceVal(_, _) => {
+                match other_val {
+                    LiteralValue::InstanceVal(_, _) => false,
+                    _ => false
+                }
             }
         }
     }
@@ -107,6 +126,7 @@ impl Callable for LiteralValue {
                     _ => 0
                 }
             },
+            LiteralValue::ClassVal(_, _) => 0,
             _ => 0
         }
     }
@@ -117,32 +137,39 @@ impl Callable for LiteralValue {
                 match interpreter.environment.get(name) {
                     Ok(v) => {
                         match v {
-                            LiteralValue::FunctionVal(stmt) => {
-                                match *stmt {
-                                    Stmt::Function { params, body, .. } => {
-                                        let environment_copy = interpreter.environment.clone();
-                                        let mut environment = interpreter.environment.clone();
-                                        for (i, param) in params.iter().enumerate() {
-                                            environment.define(param.lexeme.clone(), arguments[i].clone()).expect("Error defining function parameter.");
-                                        }
-                                        interpreter.environment = environment;
-                                        let result = interpreter.execute_block(body);
-                                        interpreter.environment = environment_copy;
-                                        result
-                                    },
-                                    _ => Err("Cannot call non-function.".to_string())
-                                }
-                            },
+                            LiteralValue::FunctionVal(stmt) => call_function_val(interpreter, &stmt, arguments),
                             _ => Err("Cannot call non-function.".to_string())
                         }
                     },
                     Err(e) => Err(e)
                 }
             },
+            LiteralValue::InstanceVal(name, values) => {
+                // println!("InstanceVal Call: {:?}", name);
+                Ok(LiteralValue::InstanceVal(name.clone(), values.clone()))
+            }
             _ => Err("Cannot call non-function.".to_string())
         }
     }
 }
+
+pub fn call_function_val (interpreter: &mut crate::interpreter::interpreter::Interpreter, stmt: &Stmt, arguments: Vec<LiteralValue>) -> Result<LiteralValue, String> {
+    match stmt {
+        Stmt::Function { params, body, .. } => {
+            let environment_copy = interpreter.environment.clone();
+            let mut environment = interpreter.environment.clone();
+            for (i, param) in params.iter().enumerate() {
+                environment.define(param.lexeme.clone(), arguments[i].clone()).expect("Error defining function parameter.");
+            }
+            interpreter.environment = environment;
+            let result = interpreter.execute_block(body.clone());
+            interpreter.environment = environment_copy;
+            result
+        },
+        _ => Err("Cannot call non-function.".to_string())
+    }
+}
+
 #[derive(Debug)]
 #[derive(Clone)]
 pub struct Token {
