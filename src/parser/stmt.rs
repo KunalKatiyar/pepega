@@ -7,6 +7,10 @@ pub enum Stmt {
     Block {
         statements: Vec<Stmt>
     },
+    Class {
+        name: Token,
+        methods: Vec<Stmt>
+    },
     Expression {
         expression: Expr
     },
@@ -63,6 +67,9 @@ impl Display for Stmt {
             },
             Stmt::Return { ref keyword, ref value } => {
                 write!(f, "Return: {:?}, {:?}", keyword, value)
+            },
+            Stmt::Class { ref name, ref methods } => {
+                write!(f, "Class: {:?}, {:?}", name, methods)
             }
         }
     }

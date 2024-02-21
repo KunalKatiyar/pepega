@@ -1,7 +1,6 @@
 use crate::interpreter::callable::{Callable};
 use crate::interpreter::environment::Environment;
-use crate::lexer::token::LiteralValue;
-use crate::lexer::token::LiteralValue::FunctionVal;
+use crate::lexer::token::{call_function_val, LiteralValue};
 use crate::parser::expr::Expr;
 use crate::parser::stmt::Stmt;
 
@@ -46,6 +45,18 @@ impl Interpreter {
                 }
                 self.environment = *(self.environment.enclosing.clone().unwrap());
                 Ok(LiteralValue::NullVal)
+            },
+            Stmt::Class { name, methods } => {
+                let mut methods_map = std::collections::HashMap::new();
+                for m in methods {
+                    match m {
+                        Stmt::Function { name, params, body } => {
+                            methods_map.insert(name.lexeme.clone(), LiteralValue::FunctionVal(Box::new(Stmt::Function { name, params, body })));
+                        },
+                        _ => panic!("")
+                    }
+                }
+                self.environment.define(name.lexeme.clone(), LiteralValue::ClassVal(Box::new(name), methods_map))
             },
             Stmt::Return { keyword: _, value } => {
                 match value {
@@ -95,7 +106,7 @@ impl Interpreter {
                 }
             },
             Stmt::Function { name, params, body } => {
-                self.environment.define(name.lexeme.clone(), FunctionVal(Box::new(Stmt::Function { name, params, body })))
+                self.environment.define(name.lexeme.clone(), LiteralValue::FunctionVal(Box::new(Stmt::Function { name, params, body })))
             }
             Stmt::Print { expression } => {
                 match self.evaluate_expr(expression) {
@@ -241,10 +252,8 @@ impl Interpreter {
                 for a in arguments {
                     args.push(self.evaluate_expr(a)?);
                 }
+                // println!("CALLEE: {:?}", callee);
                 match callee {
-                    LiteralValue::CallableVal(name) => {
-                        Ok(LiteralValue::CallableVal(name).call(self, args)?)
-                    },
                     LiteralValue::FunctionVal(stmt) => {
                         match *stmt {
                             Stmt::Function { name, params: _, body: _} => {
@@ -253,7 +262,46 @@ impl Interpreter {
                             _ => Err("Cannot call non-function.".to_string())
                         }
                     },
+                    LiteralValue::ClassVal(name, values) => {
+                        Ok(LiteralValue::InstanceVal(name, values).call(self, args)?)
+                    }
                     _ => Err("Can only call functions and classes.".to_string())
+                }
+            },
+            Expr::Get { object, name } => {
+                let object = self.evaluate_expr(*object)?;
+                // println!("OBJECT: {:?} NAME: {:?}", object, name);
+                match object {
+                    LiteralValue::InstanceVal(klass, values) => {
+                        match values.get(&name.lexeme) {
+                            Some(v) => {
+                                match v {
+                                    LiteralValue::FunctionVal(stmt) => call_function_val(self, stmt, vec![]),
+                                    _ => Ok(v.clone())
+                                }
+                            },
+                            None => {
+                                Err(format!("Undefined property '{}'.", name.lexeme))
+                            }
+                        }
+                    },
+                    _ => Err("Only instances have properties.".to_string())
+                }
+            },
+            Expr::Set { object, name, value } => {
+                let object = self.evaluate_expr(*object)?;
+                let value = self.evaluate_expr(*value)?;
+                match object {
+                    LiteralValue::InstanceVal(nameInstance, mut values) => {
+                        match values.get_mut(&name.lexeme) {
+                            Some(v) => {
+                                *v = value.clone();
+                                Ok(value)
+                            },
+                            None => Err(format!("Undefined property '{}'.", name.lexeme))
+                        }
+                    }
+                    _ => Err("Only instances have fields.".to_string())
                 }
             },
             Expr::Grouping { expression } => self.evaluate_expr(*expression),

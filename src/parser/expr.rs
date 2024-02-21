@@ -18,6 +18,10 @@ pub enum Expr {
         paren: Token,
         arguments: Vec<Expr>
     },
+    Get {
+        object: Box<Expr>,
+        name: Token
+    },
     Grouping {
         expression: Box<Expr>
     },
@@ -28,6 +32,11 @@ pub enum Expr {
         left: Box<Expr>,
         operator: Token,
         right: Box<Expr>
+    },
+    Set {
+        object: Box<Expr>,
+        name: Token,
+        value: Box<Expr>
     },
     Unary {
         operator: Token,
@@ -64,6 +73,12 @@ impl Display for Expr {
             },
             Expr::Variable { ref name } => {
                 write!(f, "Variable: {:?}", name)
+            },
+            Expr::Get { ref object, ref name } => {
+                write!(f, "Get: {:?}, {:?}", object, name)
+            },
+            Expr::Set { ref object, ref name, ref value } => {
+                write!(f, "Set: {:?}, {:?}, {:?}", object, name, value)
             }
         }
     }
@@ -72,6 +87,21 @@ impl Display for Expr {
 impl Expr {
     pub fn new_assign(name: Token, value: Expr) -> Expr {
         Expr::Assign {
+            name,
+            value: Box::new(value)
+        }
+    }
+
+    pub fn new_get(object: Expr, name: Token) -> Expr {
+        Expr::Get {
+            object: Box::new(object),
+            name
+        }
+    }
+
+    pub fn new_set(object: Expr, name: Token, value: Expr) -> Expr {
+        Expr::Set {
+            object: Box::new(object),
             name,
             value: Box::new(value)
         }
