@@ -87,6 +87,7 @@ $ cargo run Test\ Programs/helloworld.pepega
 </p>
 
 ### And many more to come!
+
 ## Usage
 
 To use Pepega, simply run the interpreter and start writing code using Twitch emotes as part of the syntax.
