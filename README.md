@@ -63,7 +63,7 @@ $ cargo run Test\ Programs/helloworld.pepega
 </p>
 4. KEKW as VAR
 <p align="center">
-   <img alt="Aware" width="30%" height="50%" src="https://www.esports.net/wp-content/uploads/2020/05/kekw-emote-2.jpg">
+   <img alt="Aware" width="30%" height="50%" src="https://www.streamscheme.com/wp-content/uploads/2020/07/kekw-emote.jpg">
 </p>
 5. FORSEN as FOR
 <p align="center">
@@ -79,7 +79,7 @@ $ cargo run Test\ Programs/helloworld.pepega
 </p>
 8. GIGACHAD as CLASS
 <p align="center">
-   <img alt="Aware" width="30%" height="50%" src="https://media1.tenor.com/m/epNMHGvRyHcAAAAC/gigachad-chad.gif">
+   <img alt="Aware" width="30%" height="50%" src="https://cdn.betterttv.net/emote/609431bc39b5010444d0cbdc/3x.webp">
 </p>
 9. And obviously, xdd as RETURN
 <p align="center">
