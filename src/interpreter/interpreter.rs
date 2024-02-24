@@ -21,7 +21,7 @@ impl Interpreter {
 
     pub fn interpret_stmt(&mut self, stmt: Vec<Stmt>) {
         for s in stmt {
-            self.execute(s);
+            self.execute(s).expect("Error executing statement.");
         }
     }
 
@@ -276,7 +276,7 @@ impl Interpreter {
                 let object_val_cpy = object_val.clone();
                 // println!("OBJECT: {:?} NAME: {:?}", object, name);
                 match object_val {
-                    LiteralValue::InstanceVal(klass, values) => {
+                    LiteralValue::InstanceVal(_klass, values) => {
                         match values.get(&name.lexeme) {
                             Some(v) => {
                                 match v {
@@ -296,7 +296,7 @@ impl Interpreter {
                 let object = self.evaluate_expr(*object)?;
                 let value = self.evaluate_expr(*value)?;
                 match object {
-                    LiteralValue::InstanceVal(nameInstance, mut values) => {
+                    LiteralValue::InstanceVal(_name_instance, mut values) => {
                         match values.get_mut(&name.lexeme) {
                             Some(v) => {
                                 *v = value.clone();

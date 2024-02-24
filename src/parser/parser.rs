@@ -336,7 +336,7 @@ impl Parser {
             if self.match_check(vec![TokenType::LEFT_PAREN]) {
                 expr = self.finish_call(expr);
             } else if self.match_check(vec![TokenType::DOT]) {
-                let mut tok = self.consume(IDENTIFIER, "Expect property name after '.'.");
+                let tok = self.consume(IDENTIFIER, "Expect property name after '.'.");
                 expr = Expr::new_get(expr, tok);
             } else {
                 break;

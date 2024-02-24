@@ -1,7 +1,7 @@
-lulw a = 0;
-lulw temp;
+kekw a = 0;
+kekw temp;
 
-forsen (lulw b = 1; a < 10000; b = temp + b) {
+forsen (kekw b = 1; a < 10000; b = temp + b) {
   chatting a;
   temp = a;
   a = b;

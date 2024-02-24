@@ -6,7 +6,7 @@ use crate::lexer::token::TokenType;
 pub fn get_keywords() -> HashMap<String, TokenType> {
     [
         ("and".to_string(), TokenType::AND),
-        ("class".to_string(), TokenType::CLASS),
+        ("gigachad".to_string(), TokenType::CLASS),
         ("aware".to_string(), TokenType::ELSE),
         ("kappa".to_string(), TokenType::FALSE),
         ("forsen".to_string(), TokenType::FOR),
@@ -18,8 +18,8 @@ pub fn get_keywords() -> HashMap<String, TokenType> {
         ("xdd".to_string(), TokenType::RETURN),
         ("super".to_string(), TokenType::SUPER),
         ("this".to_string(), TokenType::THIS),
-        ("surely".to_string(), TokenType::TRUE),
-        ("lulw".to_string(), TokenType::VAR),
+        ("yep".to_string(), TokenType::TRUE),
+        ("kekw".to_string(), TokenType::VAR),
         ("residentsleeper".to_string(), TokenType::WHILE)
     ].iter().cloned().collect()
 }
