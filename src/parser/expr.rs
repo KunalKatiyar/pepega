@@ -38,6 +38,9 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>
     },
+    This {
+        keyword: Token
+    },
     Unary {
         operator: Token,
         right: Box<Expr>
@@ -79,6 +82,9 @@ impl Display for Expr {
             },
             Expr::Set { ref object, ref name, ref value } => {
                 write!(f, "Set: {:?}, {:?}, {:?}", object, name, value)
+            },
+            Expr::This { ref keyword } => {
+                write!(f, "This: {:?}", keyword)
             }
         }
     }
@@ -131,6 +137,12 @@ impl Expr {
     pub fn new_literal(value: LiteralValue) -> Expr {
         Expr::Literal {
             value
+        }
+    }
+
+    pub fn new_this(keyword: Token) -> Expr {
+        Expr::This {
+            keyword
         }
     }
 

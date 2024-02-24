@@ -265,18 +265,22 @@ impl Interpreter {
                     LiteralValue::ClassVal(name, values) => {
                         Ok(LiteralValue::InstanceVal(name, values).call(self, args)?)
                     }
-                    _ => Err("Can only call functions and classes.".to_string())
+                    _ => {
+                        // println!("CALLEE ERR: {:?}", callee);
+                        Err("Can only call functions and classes.".to_string())
+                    }
                 }
             },
             Expr::Get { object, name } => {
-                let object = self.evaluate_expr(*object)?;
+                let object_val = self.evaluate_expr(*object)?;
+                let object_val_cpy = object_val.clone();
                 // println!("OBJECT: {:?} NAME: {:?}", object, name);
-                match object {
+                match object_val {
                     LiteralValue::InstanceVal(klass, values) => {
                         match values.get(&name.lexeme) {
                             Some(v) => {
                                 match v {
-                                    LiteralValue::FunctionVal(stmt) => call_function_val(self, stmt, vec![]),
+                                    LiteralValue::FunctionVal(stmt) => call_function_val(self, stmt, vec![], object_val_cpy.clone()),
                                     _ => Ok(v.clone())
                                 }
                             },
@@ -326,6 +330,13 @@ impl Interpreter {
                 }
             },
             Expr::Literal { value } => Ok(value.clone()),
+            Expr::This { keyword } => {
+                // println!("THIS: {:?}", self.environment.get(&keyword));
+                match self.environment.get(&keyword) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e)
+                }
+            },
             Expr::Unary { operator, right } => {
                 let right = self.evaluate_expr(*right)?;
                 match (right, operator.lexeme.as_str()) {
