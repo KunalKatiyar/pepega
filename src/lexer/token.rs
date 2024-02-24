@@ -1,8 +1,5 @@
 use std::collections::HashMap;
-use std::iter::Cloned;
 use crate::interpreter::callable::{Callable};
-use crate::interpreter::environment::Environment;
-use crate::parser::expr::Expr;
 use crate::parser::stmt::Stmt;
 
 #[derive(Debug)]
@@ -32,7 +29,7 @@ impl LiteralValue {
             LiteralValue::CallableVal(_) => "callable".to_string(),
             LiteralValue::FunctionVal(_) => "function".to_string(),
             LiteralValue::ClassVal(_, _) => "class".to_string(),
-            LiteralValue::InstanceVal(token, values) => (*(token.lexeme.clone())).to_string()
+            LiteralValue::InstanceVal(token, _values) => (*(token.lexeme.clone())).to_string()
         }
     }
 
@@ -127,7 +124,7 @@ impl Callable for LiteralValue {
                     _ => 0
                 }
             },
-            LiteralValue::ClassVal(token, values) => {
+            LiteralValue::ClassVal(_token, values) => {
                 match values.get("init") {
                     Some(v) => match v {
                         LiteralValue::FunctionVal(stmt) => {
@@ -181,7 +178,7 @@ pub fn call_function_val (interpreter: &mut crate::interpreter::interpreter::Int
             let environment_copy = interpreter.environment.clone();
             let mut environment = interpreter.environment.clone();
             match instance_value {
-                LiteralValue::InstanceVal(_, ref values) => { environment.define("this".to_string(), instance_value.clone()).expect("Error defining 'this' variable."); },
+                LiteralValue::InstanceVal(_, _) => { environment.define("this".to_string(), instance_value.clone()).expect("Error defining 'this' variable."); },
                 _ => ()
             }
 
