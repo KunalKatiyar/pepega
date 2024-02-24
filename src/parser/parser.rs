@@ -375,6 +375,9 @@ impl Parser {
         if self.match_check(vec![TokenType::NUMBER, TokenType::STRING]) {
             return Expr::new_literal(self.previous().literal.unwrap());
         }
+        if self.match_check(vec![TokenType::THIS]) {
+            return Expr::new_this(self.previous());
+        }
         if self.match_check(vec![TokenType::IDENTIFIER]) {
             return Expr::new_variable(self.previous());
         }

@@ -1,4 +1,11 @@
-pog helloworld(word) {
-    xdd ("Hello " + word + "!");
+class WTF {
+    init() {
+        chatting "Init class";
+    }
+
+    nahh() {
+        chatting this;
+    }
 }
-chatting (helloworld("world"));
+lulw methodd = WTF().nahh;
+chatting method;

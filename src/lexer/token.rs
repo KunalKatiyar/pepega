@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::iter::Cloned;
 use crate::interpreter::callable::{Callable};
 use crate::interpreter::environment::Environment;
+use crate::parser::expr::Expr;
 use crate::parser::stmt::Stmt;
 
 #[derive(Debug)]
@@ -126,7 +127,21 @@ impl Callable for LiteralValue {
                     _ => 0
                 }
             },
-            LiteralValue::ClassVal(_, _) => 0,
+            LiteralValue::ClassVal(token, values) => {
+                match values.get("init") {
+                    Some(v) => match v {
+                        LiteralValue::FunctionVal(stmt) => {
+                            let stmt_non_box = *(stmt.clone());
+                            match stmt_non_box {
+                                Stmt::Function { params, .. } => params.len(),
+                                _ => 0
+                            }
+                        },
+                        _ => 0
+                    }
+                    None => 0
+                }
+            },
             _ => 0
         }
     }
@@ -137,7 +152,7 @@ impl Callable for LiteralValue {
                 match interpreter.environment.get(name) {
                     Ok(v) => {
                         match v {
-                            LiteralValue::FunctionVal(stmt) => call_function_val(interpreter, &stmt, arguments),
+                            LiteralValue::FunctionVal(stmt) => call_function_val(interpreter, &stmt, arguments, LiteralValue::NullVal),
                             _ => Err("Cannot call non-function.".to_string())
                         }
                     },
@@ -146,6 +161,13 @@ impl Callable for LiteralValue {
             },
             LiteralValue::InstanceVal(name, values) => {
                 // println!("InstanceVal Call: {:?}", name);
+                match values.get("init") {
+                    Some(v) => match v {
+                        LiteralValue::FunctionVal(stmt) => call_function_val(interpreter, &stmt, arguments, self.clone()),
+                        _ => Err("Cannot call non-init function.".to_string())
+                    }
+                    None => Err("Cannot call non-init function.".to_string())
+                }.expect("Error calling init function.");
                 Ok(LiteralValue::InstanceVal(name.clone(), values.clone()))
             }
             _ => Err("Cannot call non-function.".to_string())
@@ -153,11 +175,16 @@ impl Callable for LiteralValue {
     }
 }
 
-pub fn call_function_val (interpreter: &mut crate::interpreter::interpreter::Interpreter, stmt: &Stmt, arguments: Vec<LiteralValue>) -> Result<LiteralValue, String> {
+pub fn call_function_val (interpreter: &mut crate::interpreter::interpreter::Interpreter, stmt: &Stmt, arguments: Vec<LiteralValue>, instance_value: LiteralValue) -> Result<LiteralValue, String> {
     match stmt {
         Stmt::Function { params, body, .. } => {
             let environment_copy = interpreter.environment.clone();
             let mut environment = interpreter.environment.clone();
+            match instance_value {
+                LiteralValue::InstanceVal(_, ref values) => { environment.define("this".to_string(), instance_value.clone()).expect("Error defining 'this' variable."); },
+                _ => ()
+            }
+
             for (i, param) in params.iter().enumerate() {
                 environment.define(param.lexeme.clone(), arguments[i].clone()).expect("Error defining function parameter.");
             }
